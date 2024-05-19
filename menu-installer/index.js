@@ -1,5 +1,6 @@
 import inquirer from "inquirer";
 import fs from 'fs';
+import mysql from 'mysql2/promise';
 function init_shell() {
     console.clear();
     console.log("*******************************", "*******************************", "*******************************\n\n");
@@ -37,11 +38,21 @@ async function show_menu() {
             type: "password",
             name: "password",
             message: "Write his password : "
-        }
+        },
+        {
+            type: "input",
+            name: "userdbmysql",
+            message: "Write the username mysql (root recommanded) : "
+        },
+        {
+            type: "password",
+            name: "passworddbmysql",
+            message: "Write the password mysql (root recommanded) : "
+        },
     ]);
-    write_config(question.name, question.password);
+    write_config(question.name, question.password, question.userdbmysql, question.passwordrootmysql);
 }
-function write_config(userdb, passdb) {
+function write_config(userdb, passdb, userrootmysql, passwordrootmysql) {
     const data = {
         name: userdb,
         password: passdb
@@ -52,9 +63,45 @@ function write_config(userdb, passdb) {
             console.error('An error occurred while writing to the file : ', err);
         }
         else {
-            console.log('Data successfully written to configs.json');
+            create_user_db(userdb, passdb, userrootmysql, passwordrootmysql);
+            console.log('\nData successfully written to configs.json\n');
         }
     });
+}
+async function connectionDB(userrootmysql, passwordrootmysql) {
+    try {
+        const connection = await mysql.createConnection({
+            host: 'localhost',
+            user: userrootmysql,
+            password: passwordrootmysql
+        });
+        console.log('Connected to the MySQL server.\n');
+        return connection;
+    }
+    catch (err) {
+        console.error('Error connecting to the database:', err);
+        throw err;
+    }
+}
+async function create_user_db(username, passwd, userrootmysql, passwordrootmysql) {
+    const connection = await connectionDB(userrootmysql, passwordrootmysql);
+    try {
+        const query = `CREATE USER '${username}'@'localhost' IDENTIFIED BY '${passwd}'`;
+        await connection.execute(query, [username, passwd]);
+        console.log('MySQL user created successfully.\n');
+        const grantPrivilegesQuery = `GRANT ALL PRIVILEGES ON nemesisbdd.* TO '${username}'@'localhost'`;
+        await connection.execute(grantPrivilegesQuery, [username]);
+        console.log(`Granted all privileges on nemesisbdd to ${username}.`);
+        const flushPrivilegesQuery = `FLUSH PRIVILEGES`;
+        await connection.execute(flushPrivilegesQuery);
+        console.log('Privileges flushed.');
+    }
+    catch (err) {
+        console.error('An error occurred while creating the MySQL user:', err);
+    }
+    finally {
+        await connection.end();
+    }
 }
 function princip_menu() {
     init_shell();
