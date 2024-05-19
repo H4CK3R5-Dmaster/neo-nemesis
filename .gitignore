@@ -7,6 +7,7 @@
 .yarn/install-state.gz
 /ui/node_modules
 /menu-installer/node_modules
+/menu-installer/configs.json
 # testing
 /coverage
 
