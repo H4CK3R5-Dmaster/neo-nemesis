@@ -92,7 +92,7 @@ function write_config(
   };
 
   const envData = Object.entries(data)
-    .map(([key, value]) => `${key}=${value}`)
+    .map(([key, value]) => `${key}="${value}"`)
     .join("\n");
 
   fs.writeFile("../ui/.env", envData, (err) => {
