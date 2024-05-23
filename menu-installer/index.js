@@ -58,7 +58,7 @@ function write_config(userdb, passdb, userrootmysql, passwordrootmysql) {
         USER_DB_PASSWORD: passdb,
     };
     const envData = Object.entries(data)
-        .map(([key, value]) => `${key}=${value}`)
+        .map(([key, value]) => `${key}="${value}"`)
         .join("\n");
     fs.writeFile("../ui/.env", envData, (err) => {
         if (err) {
